@@ -5,7 +5,7 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import Footer from '../layout/Footer';
 import Header from '../layout/Header';
-import { Ionicons } from '@expo/vector-icons';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 interface Todo {
   id: number;
@@ -97,10 +97,10 @@ const TodoScreen = () => {
     <View style={styles.container}>
       <Header />
       <View style={styles.content}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+      <TouchableOpacity onPress={() => router.push('/Home')} style={styles.backButton}>
+          <Icon name="chevron-left" size={24} color="#1D4ED8" />
         </TouchableOpacity>
-        <Text style={styles.title}>Your Todos</Text>
+        <Text style={styles.title}>Your Todos</Text> 
         {todos.length > 0 ? (
           <FlatList
             data={todos}
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
-    marginTop:20,
+    marginTop: 20,
   },
   title: {
     fontSize: 24,
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   todoItem: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#BFDBFE',
     padding: 16,
     borderRadius: 8,
     marginBottom: 10,
@@ -159,6 +159,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#888888',
     textAlign: 'center',
+    marginTop: 20,  // Added margin to make the text visually centered if no items
   },
   errorText: {
     fontSize: 18,

@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   item: {
-    backgroundColor: '#e3e4ee',
+    backgroundColor: '#BFDBFE',
     padding: 16,
     borderRadius: 8,
     marginBottom: 10,

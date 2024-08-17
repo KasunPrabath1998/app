@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import Footer from '../layout/Footer';
 import Header from '../layout/Header';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 interface Todo {
   id: number;
@@ -70,7 +71,7 @@ const TodoDetailsScreen: React.FC = () => {
       
       <ScrollView contentContainerStyle={styles.contentContainer}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="black" />
+            <Icon name="chevron-left" size={24} color="blue" />
           </TouchableOpacity>
         <View style={styles.header}>
           
