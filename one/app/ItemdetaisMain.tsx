@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import { useRoute, useNavigation } from '@react-navigation/native'; // Import useNavigation
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Footer from '../layout/Footer';
 import Header from '../layout/Header';
+import Icon from 'react-native-vector-icons/FontAwesome'; // Import Icon
 
 interface Todo {
   id: number;
@@ -27,6 +28,7 @@ const formatDateTime = (dateString: string) => {
 
 const TodoDetailScreen: React.FC = () => {
   const route = useRoute();
+  const navigation = useNavigation(); // Use useNavigation to get the navigation prop
   const { todoId } = route.params as { todoId: number }; // Ensure todoId is a number
   const [todo, setTodo] = useState<Todo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,6 +84,9 @@ const TodoDetailScreen: React.FC = () => {
     <ScrollView contentContainerStyle={styles.container}>
       <Header />
       <View style={styles.content}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Icon name="chevron-left" size={24} color="blue" />
+        </TouchableOpacity>
         <Text style={styles.title}>Task Details</Text>
         <Text style={styles.description}>{todo.description}</Text>
         <View style={styles.dateContainer}>
@@ -111,11 +116,15 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  backButton: {
+    marginBottom: 16,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1D4ED8',
     marginBottom: 16,
+    textAlign:"center",
   },
   description: {
     fontSize: 18,

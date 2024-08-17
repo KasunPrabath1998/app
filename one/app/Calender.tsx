@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     color: '#1D4ED8',
   },
   calendarContainer: {
-    flex: 2.5,
+    flex: 4,
     marginTop: 29,
     marginHorizontal: 16,
     overflow: 'visible',
@@ -217,11 +217,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   TasktitleContainer: {
-    marginTop:0,
+    marginTop:1,
     padding: 16,
   },
   TasktitleText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: 'bold',
     color:"blue",
   },

@@ -6,6 +6,7 @@ import Footer from '../layout/Footer';
 import Header from '../layout/Header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import moment from 'moment';
 
 // Define the type for a TODO item
 interface Todo {
@@ -23,27 +24,45 @@ const HomeScreen: React.FC = () => {
   useEffect(() => {
     const fetchTodos = async () => {
       try {
-        // Retrieve user ID from AsyncStorage
         const userId = await AsyncStorage.getItem('userId');
         if (userId) {
           const response = await axios.get(`http://10.0.2.2:3001/todos/${userId}`);
-          setTodos(response.data);
+          if (response.data.length > 0) {
+            setTodos(response.data);
+          } else {
+            console.log('No todos found for this user');
+            setTodos([]); // Ensure the todos state is empty
+          }
         } else {
           console.log('No user ID found');
         }
       } catch (error) {
-        console.error('Error fetching todos:', error);
+        if (error instanceof Error) {
+          console.error('Error fetching todos:', error.message);
+        } else {
+          console.error('Unexpected error:', error);
+        }
       }
     };
-
+    
     fetchTodos();
   }, []);
 
-  // Filter todos based on the title or due_date
+  // Helper function to check if a date is tomorrow or the day after tomorrow
+  const isTomorrowOrDayAfter = (dateString: string): boolean => {
+    const dueDate = moment(dateString).startOf('day');
+    const tomorrow = moment().add(1, 'day').startOf('day');
+    const dayAfterTomorrow = moment().add(2, 'days').startOf('day');
+    return dueDate.isSame(tomorrow) || dueDate.isSame(dayAfterTomorrow);
+  };
+
+  // Filter todos to include only those due tomorrow or the day after tomorrow
   const filteredTodos = todos.filter(todo =>
-    (todo.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (todo.due_date || '').toLowerCase().includes(searchQuery.toLowerCase())
+    isTomorrowOrDayAfter(todo.due_date) && (todo.title || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Sort todos to show the latest ones first
+  const sortedTodos = filteredTodos.sort((a, b) => moment(b.due_date).unix() - moment(a.due_date).unix());
 
   const handleDelete = (id: number) => {
     Alert.alert(
@@ -68,7 +87,11 @@ const HomeScreen: React.FC = () => {
                 console.log('No user ID found');
               }
             } catch (error) {
-              console.error('Error deleting todo:', error);
+              if (error instanceof Error) {
+                console.error('Error deleting todo:', error.message);
+              } else {
+                console.error('Unexpected error:', error);
+              }
             }
           },
         },
@@ -85,7 +108,12 @@ const HomeScreen: React.FC = () => {
     <View style={styles.listItem}>
       <View style={styles.todoTextContainer}>
         <Text style={styles.listItemTitle}>{item.title || 'No Title Available'}</Text>
-        <Text style={styles.listItemdue_date}>{item.due_date || 'No due_date Available'}</Text>
+        <Text style={styles.listItemdue_date}>
+          Allowcate Date: {moment(item.due_date).format('YYYY-MM-DD')}
+        </Text>
+        <Text style={styles.listItemdue_date}>
+          Time: {moment(item.due_date).format('HH:mm')}
+        </Text>
       </View>
       <View style={styles.actionButtons}>
         <TouchableOpacity onPress={() => handleViewDetails(item.id)}>
@@ -102,7 +130,7 @@ const HomeScreen: React.FC = () => {
     <View style={styles.container}>
       <Header />
       <View style={styles.todoListContainer}>
-        <Text style={styles.title}>Add Your Todos</Text>
+        <Text style={styles.title}>Add New Tasks</Text>
         <TouchableOpacity onPress={() => router.push('/Addtodolist')} style={styles.addButton}>
           <Icon name="plus-circle" size={48} color="#000" />
         </TouchableOpacity>
@@ -115,15 +143,18 @@ const HomeScreen: React.FC = () => {
           />
           <Icon name="search" size={20} color="#4F4F4F" />
         </View>
-        {filteredTodos.length > 0 ? (
+        <View>
+          <Text style={styles.latesttitle}>My Latest Tasks</Text>
+        </View>
+        {sortedTodos.length > 0 ? (
           <FlatList
-            data={filteredTodos}
+            data={sortedTodos}
             keyExtractor={(item) => item.id.toString()}
             renderItem={renderTodoItem}
             contentContainerStyle={styles.listContent}
           />
         ) : (
-          <Text style={styles.noTodos}>No todos available.</Text>
+          <Text style={styles.noTodos}>No relevant todos available.</Text>
         )}
       </View>
       <Footer />
@@ -144,6 +175,12 @@ const styles = StyleSheet.create({
   title: {
     color: '#1D4ED8',
     fontSize: 24,
+    fontWeight: 'bold',
+    marginVertical: 16,
+  },
+  latesttitle: {
+    color: '#1D4ED8',
+    fontSize: 18,
     fontWeight: 'bold',
     marginVertical: 16,
   },
@@ -198,6 +235,8 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    width: 60,
   },
 });
 
