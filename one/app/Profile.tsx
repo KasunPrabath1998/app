@@ -10,10 +10,10 @@ import { useRouter } from 'expo-router';
 interface UserDetails {
   fullName: string;
   email: string;
-  mobileNumber: string; // Correct field name
+  mobileNumber: string;
   address: string;
   password: string;
-  profileImage?: string; // Optional property
+  profileImage?: string;
 }
 
 const ProfileScreen = () => {
@@ -111,8 +111,8 @@ const ProfileScreen = () => {
           <Icon name="chevron-left" size={24} color="#1D4ED8" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutIcon }>
-            <Icon name="sign-out" size={24} color="#4F4F4F" />
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutIcon}>
+          <Icon name="sign-out" size={24} color="#4F4F4F" />
         </TouchableOpacity>
       </View>
 
@@ -195,28 +195,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
-    
   },
- 
   backButton: {
-    marginTop: 10, // Adjust the value as needed
+    marginTop: 10,
   },
   headerContainer: {
-    marginTop:40,
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 15, 
+    marginTop: 40,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 15,
   },
- 
   headerTitle: {
-    fontSize: 28, 
-    fontWeight: 'bold', 
-    color: '#1D4ED8', 
-    textAlign: 'center', 
-    flex: 1, 
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#1D4ED8',
+    textAlign: 'center',
+    flex: 1,
   },
-  
   scrollViewContent: {
     flexGrow: 1,
   },
@@ -228,7 +224,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 30,
     marginBottom: 20,
     marginHorizontal: 15,
-    
   },
   profileImage: {
     width: 100,
@@ -241,7 +236,7 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: 'black', // Updated color to match headerTitle
+    color: 'black',
   },
   profileEmail: {
     fontSize: 16,
@@ -294,6 +289,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#cccccc',
     paddingVertical: 8,
+  },
+  logoutIcon: {
+    marginTop: 10,
   },
 });
 
