@@ -252,6 +252,7 @@ const styles = StyleSheet.create({
     padding: 12,
     marginHorizontal: 16,
     marginBottom: 20,
+    marginTop:10,
   },
   editButtonText: {
     color: '#ffffff',

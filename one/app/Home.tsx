@@ -102,7 +102,7 @@ const HomeScreen: React.FC = () => {
     <View style={styles.container}>
       <Header />
       <View style={styles.todoListContainer}>
-        <Text style={styles.title}>Your Todos</Text>
+        <Text style={styles.title}>Add Your Todos</Text>
         <TouchableOpacity onPress={() => router.push('/Addtodolist')} style={styles.addButton}>
           <Icon name="plus-circle" size={48} color="#000" />
         </TouchableOpacity>
@@ -139,6 +139,7 @@ const styles = StyleSheet.create({
   todoListContainer: {
     alignItems: 'center',
     flex: 1,
+    width: '100%', // Ensure the container takes full width
   },
   title: {
     color: '#1D4ED8',
@@ -152,18 +153,20 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '91%',
     backgroundColor: '#dce2f1',
     borderRadius: 9,
-    padding: 8,
+    paddingHorizontal: 16, // Add padding on the sides
+    paddingVertical: 8,    // Add padding on the top and bottom
     marginBottom: 16,
+    width: '90%', // Same width for search bar and list items
   },
   searchInput: {
     flex: 1,
-    paddingLeft: 8,
+    paddingHorizontal: 8,
   },
   listContent: {
     flexGrow: 1,
+    width: '90%', // Same width for list items
   },
   listItem: {
     flexDirection: 'row',
@@ -171,10 +174,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#BFDBFE',
     borderRadius: 8,
-    padding: 16,
-    marginHorizontal: 16,
+    paddingHorizontal: 16, // Add padding on the sides
+    paddingVertical: 12,   // Add padding on the top and bottom
     marginBottom: 16,
-    width: '90%',
+    width: '100%', // Ensure list items take full width of their container
   },
   todoTextContainer: {
     flex: 1,

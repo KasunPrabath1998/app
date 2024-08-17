@@ -139,6 +139,12 @@ const ProfileScreen = () => {
         />
       </View>
 
+      <View style={styles.TasktitleContainer}>
+  <Text style={styles.TasktitleText}>Available Tasks</Text>
+</View>
+
+
+
       <View style={styles.itemsContainer}>
         {loading ? (
           <ActivityIndicator size="large" color="#1D4ED8" />
@@ -148,7 +154,7 @@ const ProfileScreen = () => {
             keyExtractor={(item) => item.id.toString()}
             renderItem={renderItem}
             contentContainerStyle={styles.itemsList}
-            ListEmptyComponent={<Text style={styles.noItems}>No items for this date.</Text>}
+            ListEmptyComponent={<Text style={styles.noItems}>No tasks for this date.</Text>}
           />
         )}
       </View>
@@ -173,13 +179,13 @@ const styles = StyleSheet.create({
     color: '#1D4ED8',
   },
   calendarContainer: {
-    flex: 2,
+    flex: 2.5,
     marginTop: 29,
     marginHorizontal: 16,
     overflow: 'visible',
     elevation: 0,
     backgroundColor: '#fff',
-    borderWidth: 3,
+    borderWidth: 5,
     borderColor: '#ddd',
   },
   itemsContainer: {
@@ -209,6 +215,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#888888',
     textAlign: 'center',
+  },
+  TasktitleContainer: {
+    marginTop:0,
+    padding: 16,
+  },
+  TasktitleText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color:"blue",
   },
 });
 
