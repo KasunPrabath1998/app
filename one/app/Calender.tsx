@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
-import { Calendar } from 'react-native-calendars';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { Calendar } from 'react-native-calendars';
 import Footer from '../layout/Footer';
 import Header from '../layout/Header';
+import { useRouter } from 'expo-router';
 
 interface Item {
   id: number;
   title: string;
   description: string;
-  due_date: string; // Date in 'YYYY-MM-DD HH:MM:SS' format
+  due_date: string;
   userId: number;
-  created_at: string; // Timestamp
+  created_at: string;
 }
 
 const ProfileScreen = () => {
@@ -20,8 +22,9 @@ const ProfileScreen = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [sriLankanTime, setSriLankanTime] = useState<string>('');
 
+  const router = useRouter();
+
   useEffect(() => {
-    // Function to update the Sri Lankan time
     const updateTime = () => {
       const options: Intl.DateTimeFormatOptions = {
         timeZone: 'Asia/Colombo',
@@ -37,10 +40,7 @@ const ProfileScreen = () => {
       setSriLankanTime(date);
     };
 
-    // Update the time immediately
     updateTime();
-
-    // Set an interval to update the time every second
     const interval = setInterval(updateTime, 1000);
 
     return () => clearInterval(interval);
@@ -50,9 +50,18 @@ const ProfileScreen = () => {
     const fetchItems = async () => {
       setLoading(true);
       try {
-        // Assume userId is 21 for this example; replace with the actual userId if needed
-        const userId = 21;
-        const response = await axios.get(`http://10.0.2.2:3001/todos/${userId}/date/${selectedDate}`);
+        const token = await AsyncStorage.getItem('token');
+        const userId = await AsyncStorage.getItem('userId');
+
+        if (!token || !userId) {
+          Alert.alert('Error', 'No authentication details found. Please log in.');
+          return;
+        }
+
+        const response = await axios.get(`http://10.0.2.2:3001/todos/${userId}/date/${selectedDate}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
         if (response.status === 200) {
           setItems(response.data);
         } else {
@@ -72,11 +81,18 @@ const ProfileScreen = () => {
     setSelectedDate(day.dateString);
   };
 
+  const handleItemPress = (item: Item) => {
+    router.push({
+      pathname: '/TodoDetailScreen', // Updated route name
+      params: { item: JSON.stringify(item) }, // Serialize the item object
+    });
+  };
+  
   const renderItem = ({ item }: { item: Item }) => (
-    <View style={styles.item}>
+    <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.item}>
       <Text style={styles.itemTitle}>{item.title}</Text>
       <Text style={styles.itemDescription}>{item.description}</Text>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -100,7 +116,7 @@ const ProfileScreen = () => {
             },
           }}
           monthFormat={'yyyy-MM'}
-          hideExtraDays={false}  // Temporarily set to false for debugging
+          hideExtraDays={true}
           enableSwipeMonths={true}
           onDayPress={handleDayPress}
           theme={{
@@ -157,12 +173,14 @@ const styles = StyleSheet.create({
     color: '#1D4ED8',
   },
   calendarContainer: {
-    flex: 1,
-    marginTop: 20,
+    flex: 2,
+    marginTop: 29,
     marginHorizontal: 16,
-    borderRadius: 8,
-    overflow: 'hidden',
-    elevation: 3,
+    overflow: 'visible',
+    elevation: 0,
+    backgroundColor: '#fff',
+    borderWidth: 3,
+    borderColor: '#ddd',
   },
   itemsContainer: {
     flex: 1,
@@ -172,7 +190,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   item: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#e3e4ee',
     padding: 16,
     borderRadius: 8,
     marginBottom: 10,

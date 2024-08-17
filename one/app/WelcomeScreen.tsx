@@ -10,7 +10,7 @@ const WelcomeScreen = () => {
     const timer = setTimeout(() => {
       console.log("Navigating to LoginScreen...");
       router.push("/LoginScreen");  // Automatically navigate after 2 seconds
-    }, 3000); // 2 seconds
+    }, 1000); // 2 seconds
 
     // Cleanup the timer when the component unmounts
     return () => {

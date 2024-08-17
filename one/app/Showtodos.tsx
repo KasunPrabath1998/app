@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useRouter } from 'expo-router';
 import Footer from '../layout/Footer';
 import Header from '../layout/Header';
+import { Ionicons } from '@expo/vector-icons';
 
 interface Todo {
   id: number;
@@ -96,6 +97,9 @@ const TodoScreen = () => {
     <View style={styles.container}>
       <Header />
       <View style={styles.content}>
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
         <Text style={styles.title}>Your Todos</Text>
         {todos.length > 0 ? (
           <FlatList
@@ -121,6 +125,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
+    marginTop:20,
   },
   title: {
     fontSize: 24,
@@ -128,7 +133,7 @@ const styles = StyleSheet.create({
     color: '#1D4ED8',
     marginBottom: 16,
     textAlign: 'center',
-    marginTop: 25,
+    marginTop: 10,
   },
   listContent: {
     paddingBottom: 20,
@@ -160,6 +165,9 @@ const styles = StyleSheet.create({
     color: '#FF0000',
     textAlign: 'center',
     marginTop: 20,
+  },
+  backButton: {
+    marginBottom: 16,
   },
 });
 

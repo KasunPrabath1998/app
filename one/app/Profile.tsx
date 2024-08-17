@@ -111,7 +111,7 @@ const ProfileScreen = () => {
           <Icon name="chevron-left" size={24} color="#1D4ED8" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutIcon }>
+        <TouchableOpacity onPress={handleLogout} style={styles.logoutIcon}>
             <Icon name="sign-out" size={24} color="#4F4F4F" />
         </TouchableOpacity>
       </View>
@@ -195,20 +195,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
-    
   },
- 
   backButton: {
     marginTop: 10, // Adjust the value as needed
   },
   headerContainer: {
-    marginTop:40,
+    marginTop: 40,
     flexDirection: 'row', 
     justifyContent: 'space-between', 
     alignItems: 'center', 
     paddingHorizontal: 15, 
   },
- 
   headerTitle: {
     fontSize: 28, 
     fontWeight: 'bold', 
@@ -216,7 +213,9 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
     flex: 1, 
   },
-  
+  logoutIcon: {
+    marginTop: 10, // Add margin if needed
+  },
   scrollViewContent: {
     flexGrow: 1,
   },
@@ -228,7 +227,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 30,
     marginBottom: 20,
     marginHorizontal: 15,
-    
   },
   profileImage: {
     width: 100,
@@ -278,22 +276,18 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   detailLabel: {
-    fontSize: 16,
-    color: '#333333',
-    flex: 1,
+    fontWeight: 'bold',
+    color: '#333',
+    width: 100,
   },
   detailValue: {
-    fontSize: 16,
-    color: '#666666',
-    flex: 2,
+    flex: 1,
     borderBottomWidth: 1,
-    borderBottomColor: '#cccccc',
-    paddingVertical: 8,
+    borderBottomColor: '#ddd',
+    paddingVertical: 4,
   },
 });
 

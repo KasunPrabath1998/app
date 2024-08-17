@@ -67,11 +67,13 @@ const TodoDetailsScreen: React.FC = () => {
   return (
     <View style={styles.container}>
       <Header />
+      
       <ScrollView contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="white" />
+      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color="black" />
           </TouchableOpacity>
+        <View style={styles.header}>
+          
           <Text style={styles.title}>Task Details</Text>
         </View>
         {todo ? (
@@ -111,19 +113,20 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     paddingVertical: 16,
+    marginTop:20,
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
+    backgroundColor: '#007BFF', // Ensure this color is visible
+    paddingHorizontal: 16, // Ensure padding is added for spacing
   },
   backButton: {
-    position: 'absolute',
-    left: 16,
+    marginRight: 16, // Added margin for spacing
   },
   title: {
     fontSize: 28,
     fontWeight: '600',
-    color: 'blue',
+    color: 'white', // Ensure text color contrasts with header background
     textAlign: 'center',
     flex: 1,
   },
