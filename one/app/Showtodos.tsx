@@ -8,7 +8,7 @@ import Header from '../layout/Header';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 interface Todo {
-  id: number;
+  id: string; // Updated to string to match common ID formats in APIs
   title: string;
   description: string;
 }
@@ -35,11 +35,17 @@ const TodoScreen = () => {
       });
 
       if (response.status === 200) {
-        setTodos(response.data);
+        // Assuming response.data is an array of todos
+        const todosFromApi = response.data.map((todo: any) => ({
+          id: todo._id, // Map _id to id if needed
+          title: todo.title,
+          description: todo.description,
+        }));
+        setTodos(todosFromApi);
       }
     } catch (error: any) {
       if (error.response && error.response.status === 404) {
-        // If the error is a 404, we assume there are no todos available
+        // If the error is a 404, assume no todos are available
         setTodos([]);
       } else {
         console.error('Error fetching todos:', error);
@@ -79,13 +85,6 @@ const TodoScreen = () => {
 
   const handlePress = async (todo: Todo) => {
     try {
-      const userId = await AsyncStorage.getItem('userId');
-      if (!userId) {
-        console.log('No user ID found');
-        Alert.alert('Error', 'No user ID found.');
-        return;
-      }
-
       router.push({
         pathname: '/ItemdetaisMain',
         params: { todoId: todo.id },  // Pass only the todoId
@@ -95,12 +94,15 @@ const TodoScreen = () => {
     }
   };
 
-  const renderTodoItem = ({ item }: { item: Todo }) => (
-    <TouchableOpacity onPress={() => handlePress(item)} style={styles.todoItem}>
-      <Text style={styles.todoTitle}>{item.title}</Text>
-      <Text style={styles.todoDescription}>{item.description}</Text>
-    </TouchableOpacity>
-  );
+  const renderTodoItem = ({ item }: { item: Todo }) => {
+    console.log('Rendering item with ID:', item.id); // Debugging log
+    return (
+      <TouchableOpacity onPress={() => handlePress(item)} style={styles.todoItem}>
+        <Text style={styles.todoTitle}>{item.title}</Text>
+        <Text style={styles.todoDescription}>{item.description}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -113,7 +115,7 @@ const TodoScreen = () => {
         {todos.length > 0 ? (
           <FlatList
             data={todos}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => item.id} // Ensure unique key for each item
             renderItem={renderTodoItem}
             contentContainerStyle={styles.listContent}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -148,7 +150,6 @@ const styles = StyleSheet.create({
     color: '#1D4ED8',
     marginBottom: 16,
     textAlign: 'center',
-    marginTop: 10,
   },
   listContent: {
     paddingBottom: 20,
@@ -159,7 +160,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 10,
     elevation: 2,
-    marginHorizontal: 14,
   },
   todoTitle: {
     fontSize: 18,

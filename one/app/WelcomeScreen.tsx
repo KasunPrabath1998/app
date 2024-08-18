@@ -1,29 +1,26 @@
-import React, { useEffect } from "react";
-import { StyleSheet, Text, View, Image } from "react-native";
-import { useRouter } from "expo-router";
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useEffect } from 'react';
+import { router } from 'expo-router';
 
-const WelcomeScreen = () => {
-  const router = useRouter();  // Correctly use the router
-
+const Index = () => {
+  
   useEffect(() => {
-    console.log("Setting up navigation timer...");
     const timer = setTimeout(() => {
-      console.log("Navigating to LoginScreen...");
-      router.push("/LoginScreen");  // Automatically navigate after 2 seconds
-    }, 1000); // 2 seconds
+      router.navigate("./LoginScreen");
+    }, 5000); // 2 seconds
 
-    // Cleanup the timer when the component unmounts
-    return () => {
-      console.log("Cleaning up timer...");
-      clearTimeout(timer);
-    };
-  }, [router]);  // Ensure router is a dependency to avoid stale closures
+    // Cleanup the timer if the component unmounts
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <Image source={require("../assets/logo.png")} style={styles.logo} />
       </View>
+      <TouchableOpacity onPress={() => router.navigate("./LoginScreen")} style={styles.arrowButton}>
+        <Text style={styles.arrow}>&#10140;</Text>
+      </TouchableOpacity>
       <Text style={styles.footerText}>Powered By Kasun</Text>
     </View>
   );
@@ -34,7 +31,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#005aff',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 50,
     paddingHorizontal: 20,
   },
@@ -46,12 +43,18 @@ const styles = StyleSheet.create({
     height: 400,
     marginBottom: 20,
   },
+  arrowButton: {
+    backgroundColor: 'transparent',
+    padding: 10,
+  },
+  arrow: {
+    fontSize: 40,
+    color: 'white',
+  },
   footerText: {
     fontSize: 14,
     color: 'white',
-    position: 'absolute',
-    bottom: 20,
   },
 });
 
-export default WelcomeScreen;
+export default Index;

@@ -1,16 +1,16 @@
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import Footer from '../layout/Footer';
-import Header from '../layout/Header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import moment from 'moment';
+import Footer from '../layout/Footer';
+import Header from '../layout/Header';
 
 // Define the type for a TODO item
 interface Todo {
-  id: number;
+  _id: string;
   title: string;
   description: string;
   due_date: string;
@@ -20,78 +20,63 @@ interface Todo {
 const HomeScreen: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [filteredTodos, setFilteredTodos] = useState<Todo[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchTodos = async () => {
       try {
-        const userId = await AsyncStorage.getItem('userId');
-        if (userId) {
-          const response = await axios.get(`http://10.0.2.2:3001/todos/${userId}`);
-          if (response.data.length > 0) {
-            setTodos(response.data);
-          } else {
-            console.log('No todos found for this user');
-            setTodos([]); // Ensure the todos state is empty
-          }
+        const storedUserId = await AsyncStorage.getItem('userId');
+        if (storedUserId) {
+          setUserId(storedUserId);
+          const response = await axios.get(`http://10.0.2.2:3001/todos/${storedUserId}`);
+          const todosData = Array.isArray(response.data) ? response.data : [];
+          setTodos(todosData);
+          setFilteredTodos(todosData); // Initialize filteredTodos with all todos
         } else {
           console.log('No user ID found');
         }
       } catch (error) {
-        if (error instanceof Error) {
-          console.error('Error fetching todos:', error.message);
-        } else {
-          console.error('Unexpected error:', error);
-        }
+        console.error('Error fetching todos:', error);
       }
     };
-    
+
     fetchTodos();
   }, []);
 
-  // Helper function to check if a date is tomorrow or the day after tomorrow
-  const isTomorrowOrDayAfter = (dateString: string): boolean => {
-    const dueDate = moment(dateString).startOf('day');
-    const tomorrow = moment().add(1, 'day').startOf('day');
-    const dayAfterTomorrow = moment().add(2, 'days').startOf('day');
-    return dueDate.isSame(tomorrow) || dueDate.isSame(dayAfterTomorrow);
-  };
+  useEffect(() => {
+    if (searchQuery) {
+      const lowercasedQuery = searchQuery.toLowerCase();
+      const filtered = todos.filter(todo =>
+        todo.title.toLowerCase().includes(lowercasedQuery) ||
+        todo.description.toLowerCase().includes(lowercasedQuery)
+      );
+      setFilteredTodos(filtered);
+    } else {
+      setFilteredTodos(todos);
+    }
+  }, [searchQuery, todos]);
 
-  // Filter todos to include only those due tomorrow or the day after tomorrow
-  const filteredTodos = todos.filter(todo =>
-    isTomorrowOrDayAfter(todo.due_date) && (todo.title || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Sort todos to show the latest ones first
-  const sortedTodos = filteredTodos.sort((a, b) => moment(b.due_date).unix() - moment(a.due_date).unix());
-
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     Alert.alert(
       'Confirm Delete',
       'Are you sure you want to delete this TODO item?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
+        { text: 'Cancel', style: 'cancel' },
         {
           text: 'OK',
           onPress: async () => {
             try {
-              // Retrieve user ID from AsyncStorage
-              const userId = await AsyncStorage.getItem('userId');
               if (userId) {
                 await axios.delete(`http://10.0.2.2:3001/todos/${userId}/${id}`);
-                // Remove the deleted item from the local state
-                setTodos(todos.filter(todo => todo.id !== id));
+                setTodos(todos.filter(todo => todo._id !== id));
+                setFilteredTodos(filteredTodos.filter(todo => todo._id !== id)); // Also update filteredTodos
               } else {
                 console.log('No user ID found');
               }
             } catch (error) {
-              if (error instanceof Error) {
-                console.error('Error deleting todo:', error.message);
-              } else {
-                console.error('Unexpected error:', error);
-              }
+              console.error('Error deleting todo:', error);
             }
           },
         },
@@ -100,26 +85,31 @@ const HomeScreen: React.FC = () => {
     );
   };
 
-  const handleViewDetails = (id: number) => {
-    router.push(`/TodoDetailScreen?todoId=${id}`);
+  const handleViewDetails = async (todoId: string) => {
+    if (!userId || !todoId) {
+      console.log('Missing user ID or Todo ID');
+      return;
+    }
+
+    try {
+      await router.push(`/ItemdetaisMain?userId=${userId}&todoId=${todoId}`);
+    } catch (error) {
+      console.error('Error navigating to todo details:', error);
+    }
   };
 
   const renderTodoItem = ({ item }: { item: Todo }) => (
     <View style={styles.listItem}>
       <View style={styles.todoTextContainer}>
         <Text style={styles.listItemTitle}>{item.title || 'No Title Available'}</Text>
-        <Text style={styles.listItemdue_date}>
-          Allowcate Date: {moment(item.due_date).format('YYYY-MM-DD')}
-        </Text>
-        <Text style={styles.listItemdue_date}>
-          Time: {moment(item.due_date).format('HH:mm')}
-        </Text>
+        <Text style={styles.listItemDueDate}>Allocate Date: {moment(item.due_date).format('YYYY-MM-DD')}</Text>
+        <Text style={styles.listItemDueDate}>Time: {moment(item.due_date).format('HH:mm')}</Text>
       </View>
       <View style={styles.actionButtons}>
-        <TouchableOpacity onPress={() => handleViewDetails(item.id)}>
+        <TouchableOpacity onPress={() => handleViewDetails(item._id)}>
           <Icon name="eye" size={24} color="#007BFF" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => handleDelete(item.id)}>
+        <TouchableOpacity onPress={() => handleDelete(item._id)}>
           <Icon name="trash" size={24} color="#E53E3E" />
         </TouchableOpacity>
       </View>
@@ -143,13 +133,11 @@ const HomeScreen: React.FC = () => {
           />
           <Icon name="search" size={20} color="#4F4F4F" />
         </View>
-        <View>
-          <Text style={styles.latesttitle}>My Latest Tasks</Text>
-        </View>
-        {sortedTodos.length > 0 ? (
+        <Text style={styles.latestTitle}>My Latest Tasks</Text>
+        {filteredTodos.length > 0 ? (
           <FlatList
-            data={sortedTodos}
-            keyExtractor={(item) => item.id.toString()}
+            data={filteredTodos}
+            keyExtractor={(item) => item._id}
             renderItem={renderTodoItem}
             contentContainerStyle={styles.listContent}
           />
@@ -170,7 +158,7 @@ const styles = StyleSheet.create({
   todoListContainer: {
     alignItems: 'center',
     flex: 1,
-    width: '100%', // Ensure the container takes full width
+    width: '100%',
   },
   title: {
     color: '#1D4ED8',
@@ -178,7 +166,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginVertical: 16,
   },
-  latesttitle: {
+  latestTitle: {
     color: '#1D4ED8',
     fontSize: 18,
     fontWeight: 'bold',
@@ -192,10 +180,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#dce2f1',
     borderRadius: 9,
-    paddingHorizontal: 16, // Add padding on the sides
-    paddingVertical: 8,    // Add padding on the top and bottom
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     marginBottom: 16,
-    width: '90%', // Same width for search bar and list items
+    width: '90%',
   },
   searchInput: {
     flex: 1,
@@ -203,7 +191,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     flexGrow: 1,
-    width: '90%', // Same width for list items
+    width: '90%',
   },
   listItem: {
     flexDirection: 'row',
@@ -211,10 +199,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#BFDBFE',
     borderRadius: 8,
-    paddingHorizontal: 16, // Add padding on the sides
-    paddingVertical: 12,   // Add padding on the top and bottom
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     marginBottom: 16,
-    width: '100%', // Ensure list items take full width of their container
+    width: '100%',
   },
   todoTextContainer: {
     flex: 1,
@@ -223,7 +211,7 @@ const styles = StyleSheet.create({
     color: '#1D4ED8',
     fontWeight: 'bold',
   },
-  listItemdue_date: {
+  listItemDueDate: {
     color: '#4B5563',
   },
   noTodos: {

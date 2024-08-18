@@ -1,282 +1,359 @@
 const express = require('express');
-const mysql = require('mysql');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const bcrypt = require('bcrypt'); // For hashing passwords
-const jwt = require('jsonwebtoken'); // For generating tokens
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const User = require('./models/user');
+const Todo = require('./models/todo');
 
 const app = express();
-app.use(cors());
-app.use(bodyParser.json());
 app.use(express.json());
 
-// Create a MySQL connection
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'users'
-});
 
-// Connect to MySQL
-db.connect(err => {
-  if (err) {
-    console.error('Database connection failed:', err.stack);
-    return;
-  }
-  console.log('Connected to MySQL database.');
-});
 
-// Sign Up 
-app.post('/signup', (req, res) => {
-  const { fullName, email, mobileNumber, password } = req.body;
-  const hashedPassword = bcrypt.hashSync(password, 10); // Hash password
-  
-  const query = 'INSERT INTO users (fullName, email, mobileNumber, password) VALUES (?, ?, ?, ?)';
-  db.query(query, [fullName, email, mobileNumber, hashedPassword], (err, result) => {
-    if (err) {
+// Replace with your MongoDB connection string
+const mongoUri = 'mongodb://localhost:27017/users';
+
+mongoose.connect(mongoUri)
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('Database connection failed:', err));
+
+
+// Sign Up
+app.post('/signup', async (req, res) => {
+  try {
+    const { fullName, email, mobileNumber, password } = req.body;
+    const hashedPassword = bcrypt.hashSync(password, 10);
+
+    // Check if the email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).send({ message: 'Email already in use.' });
+    }
+
+    const newUser = new User({ fullName, email, mobileNumber, password: hashedPassword });
+    await newUser.save();
+
+    res.status(200).send({ message: 'User registered successfully', user: newUser });
+  } catch (err) {
+    if (err.code === 11000) { // Duplicate key error code
+      res.status(400).send({ message: 'Email already in use.' });
+    } else {
       console.error('Error saving data:', err);
       res.status(500).send({ message: 'Error saving data' });
-    } else {
-      res.status(200).send({ message: 'User registered successfully' });
     }
-  });
+  }
 });
+
 
 // Login
-app.post('/login', (req, res) => {
-  const { email, password } = req.body;
+app.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).send({ message: 'User not found' });
+        }
+
+        if (bcrypt.compareSync(password, user.password)) {
+            const token = jwt.sign({ userId: user._id }, 'your_jwt_secret', { expiresIn: '1h' });
+            res.status(200).send({ message: 'Login successful', token, userId: user._id });
+        } else {
+            res.status(401).send({ message: 'Invalid credentials' });
+        }
+    } catch (err) {
+        console.error('Error during login:', err);
+        res.status(500).send({ message: 'Internal Server Error' });
+    }
+});
+
+// Add Todo
+// Add Todo
+app.post('/add-todo', async (req, res) => {
+  try {
+      const { title, description, date, time, userId } = req.body;
+
+      // Validate required fields
+      if (!title || !description || !date || !time || !userId) {
+          return res.status(400).json({ message: 'Missing required fields' });
+      }
+
+      // Combine date and time into a single Date object
+      const due_date = new Date(`${date}T${time}`); // Ensures the correct format (ISO string)
+
+      // Validate the date
+      if (isNaN(due_date.getTime())) { // Check if the date is invalid
+          return res.status(400).json({ message: 'Invalid date or time format' });
+      }
+
+      // Create and save the new Todo
+      const newTodo = new Todo({
+          title,
+          description,
+          due_date,
+          userId
+      });
+      await newTodo.save();
+
+      res.status(201).json({ message: 'Todo added successfully', todo: newTodo });
+  } catch (error) {
+      console.error('Error adding todo:', error);
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// Show Todos under serch bar home 
+app.get('/todos/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        // Check if userId is a valid ObjectId
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            console.log('Invalid userId format');
+            return res.status(400).json({ message: 'Invalid user ID format' });
+        }
+
+        console.log('Fetching todos for userId:', userId);
+
+        const todos = await Todo.find({ userId });
+
+        if (todos.length === 0) {
+            console.log('No todos found for this user');
+            return res.status(404).json({ message: 'No todos found for this user' });
+        }
+
+        res.status(200).json(todos);
+    } catch (err) {
+        console.error('Error fetching todos:', err);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
+
+
+
+// Calender
+
+app.get('/todos/:userId/date/:date', async (req, res) => {
+  try {
+    const { userId, date } = req.params;
+
+    // Parse the date parameter into a UTC Date object
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ message: 'Invalid date format' });
+    }
+    // Set start and end of the day in UTC
+    const startOfDay = new Date(parsedDate);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(parsedDate);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    // Query for todos
+    const todos = await Todo.find({
+      userId: userId,
+      due_date: { $gte: startOfDay, $lt: endOfDay }
+    });
+
+    if (todos.length === 0) {
+      return res.status(404).json({ message: 'No task found for this date' });
+    }
+
+    res.status(200).json(todos);
+  } catch (err) {
+    console.error('Error fetching TODO items:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
+app.get('/todos/:userId/:todoId', async (req, res) => {
+    const { userId, todoId } = req.params;
   
-  const query = 'SELECT * FROM users WHERE email = ?';
-  db.query(query, [email], (err, results) => {
-    if (err) {
-      console.error('Database query failed:', err);
-      res.status(500).send({ message: 'Database query failed' });
-    } else if (results.length === 0) {
-      res.status(401).send({ message: 'User not found' });
-    } else {
-      const user = results[0];
-      if (bcrypt.compareSync(password, user.password)) {
-        // Create a token
-        const token = jwt.sign({ userId: user.id }, 'your_jwt_secret', { expiresIn: '1h' });
-        res.status(200).send({ 
-          message: 'Login successful', 
-          token, 
-          userId: user.id 
-        });
-      } else {
-        res.status(401).send({ message: 'Invalid credentials' });
+    try {
+      const todo = await Todo.findOne({ _id: todoId, userId });
+  
+      if (!todo) {
+        return res.status(404).json({ message: 'Todo not found' });
       }
+  
+      res.json(todo);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
     }
   });
-});
 
-
-// Add Todo 
-app.post('/add-todo', (req, res) => {
-  const { title, description, date, time, userId } = req.body;
-
-
-  if (!title || !description || !date || !time || !userId) {
-    return res.status(400).send('Missing required fields');
-  }
-
-
-  const due_date = `${date} ${time}`;
-
-  const query = 'INSERT INTO todos (title, description, due_date, userId) VALUES (?, ?, ?, ?)';
-  db.query(query, [title, description, due_date, userId], (error, results) => {
-    if (error) {
-      console.error('Database query error:', error);
-      return res.status(500).send('Internal Server Error');
-    }
-    res.status(200).send('Todo added successfully');
-  });
-});
-
-// show Todos 
-app.get('/todos/:userId', (req, res) => {
-  const userId = req.params.userId;
-
-
-  if (!userId || !/^\d+$/.test(userId)) {
-    return res.status(400).json({ message: 'Invalid userId format' });
-  }
-
-
-  const query = 'SELECT * FROM todos WHERE userId = ?';
-  db.query(query, [userId], (err, results) => {
-    if (err) {
-      console.error('Error fetching todos:', err);
-      return res.status(500).json({ message: 'Internal Server Error' });
-    }
-    
-    if (results.length === 0) {
-      return res.status(404).json({ message: 'No todos found for this user' });
-    }
-    
-
-    res.status(200).json(results);
-  });
-});
-
-    // Home serchbar bellow todo list
-    app.get('/todos/:userId', (req, res) => {
-      const userId = req.params.userId;
-      
-      console.log('Received userId:', userId); // Log the userId received
-    
-   
-      if (!userId || !/^\d+$/.test(userId)) {
-        return res.status(400).json({ message: 'Invalid userId format' });
-      }
-      
- 
-      const query = `
-        SELECT * FROM todos 
-        WHERE userId = ? 
-        ORDER BY created_at DESC 
-        LIMIT 1
-      `;
-      
-      db.query(query, [userId], (err, results) => {
-        if (err) {
-          console.error('Error fetching todos:', err);
-          return res.status(500).json({ message: 'Internal Server Error' });
-        }
-        
-        if (results.length === 0) {
-          return res.status(404).json({ message: 'No todos found for this user' });
-        }
-        
-        
-        res.status(200).json(results);
-      });
-    });
-    
-    // Delete todos
-    app.delete('/todos/:userId/:todoId', (req, res) => {
-      const { userId, todoId } = req.params;
-    
-      
-      if (!userId || !/^\d+$/.test(userId) || !todoId || !/^\d+$/.test(todoId)) {
-        return res.status(400).json({ message: 'Invalid parameters' });
-      }
-    
-    
-      const query = 'DELETE FROM todos WHERE userId = ? AND id = ?';
-    
-      db.query(query, [userId, todoId], (err, results) => {
-        if (err) {
-          console.error('Error deleting todo:', err);
-          return res.status(500).json({ message: 'Internal Server Error' });
-        }
-    
-        if (results.affectedRows === 0) {
-          return res.status(404).json({ message: 'Todo not found' });
-        }
-    
-        res.status(200).json({ message: 'Todo deleted successfully' });
-      });
-    });
-
-   
-
-    
-// Fetch User by ID Endpoint
-app.get('/users/:userId', (req, res) => {
-  const userId = req.params.userId;
-
-  const query = 'SELECT * FROM users WHERE id = ?';
-  db.query(query, [userId], (err, results) => {
-    if (err) {
-      console.error('Error fetching user:', err);
-      res.status(500).send({ message: 'Error fetching user' });
-    } else if (results.length === 0) {
-      res.status(404).send({ message: 'User not found' });
-    } else {
-      res.status(200).send(results[0]);
-    }
-  });
-});
-
-// Update User details
-app.put('/users/:userId', (req, res) => {
-  const userId = req.params.userId;
-  const { fullName, email, mobileNumber, password } = req.body;
-
-
-  let query = 'UPDATE users SET fullName = ?, email = ?, mobileNumber = ?';
-  const values = [fullName, email, mobileNumber];
-
-
-  if (password) {
-    const hashedPassword = bcrypt.hashSync(password, 10); // Hash the new password
-    query += ', password = ?';
-    values.push(hashedPassword);
-  }
-
-  query += ' WHERE id = ?';
-  values.push(userId);
-
-  db.query(query, values, (err, result) => {
-    if (err) {
-      console.error('Error updating user details:', err); // Log detailed error
-      res.status(500).send({ message: 'Error updating user details', error: err }); // Include error in response
-    } else {
-      res.status(200).send({ message: 'User details updated successfully' });
-    }
-  });
-});
 
 
 // Show a specific TODO item for a user
-app.get('/todos/:userId/:todoId', (req, res) => {
-  const { userId, todoId } = req.params;
+app.get('/todos/:userId/:todoId', async (req, res) => {
+  try {
+      const { userId, todoId } = req.params;
 
+      console.log('Received userId:', userId);
+      console.log('Received todoId:', todoId);
 
-  if (!userId || !/^\d+$/.test(userId) || !todoId || !/^\d+$/.test(todoId)) {
-    return res.status(400).json({ message: 'Invalid parameters' });
-  }
+      // Check if IDs are valid ObjectId instances
+      if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(todoId)) {
+          console.log('Invalid parameters');
+          return res.status(400).json({ message: 'Invalid parameters' });
+      }
 
-  
-  const query = 'SELECT * FROM todos WHERE userId = ? AND id = ?';
-  db.query(query, [userId, todoId], (err, results) => {
-    if (err) {
+      // Use new mongoose.Types.ObjectId() to create ObjectId instances
+      const todo = await Todo.findOne({ 
+          _id: new mongoose.Types.ObjectId(todoId), 
+          userId: new mongoose.Types.ObjectId(userId) 
+      });
+
+      if (!todo) {
+          console.log('Todo not found');
+          return res.status(404).json({ message: 'Todo not found' });
+      }
+
+      
+      res.status(200).json(todo);
+  } catch (err) {
       console.error('Error fetching todo:', err);
-      return res.status(500).json({ message: 'Internal Server Error' });
-    }
-
-    if (results.length === 0) {
-      return res.status(404).json({ message: 'Todo not found' });
-    }
-
-    res.status(200).json(results[0]);
-  });
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
 });
 
 
-// Get TODO items acording to calender 
-app.get('/todos/:userId/date/:date', (req, res) => {
-  const { userId, date } = req.params;
+// Delete Todo since home page
+app.delete('/todos/:userId/:todoId', async (req, res) => {
+    try {
+        const { userId, todoId } = req.params;
 
-  const query = `
-    SELECT * FROM todos
-    WHERE userId = ? AND DATE(due_date) = ?;
-  `;
+        if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(todoId)) {
+            return res.status(400).json({ message: 'Invalid parameters' });
+        }
 
-  db.query(query, [userId, date], (err, results) => {
-    if (err) {
-      console.error('Error fetching TODO items:', err);
-      res.status(500).json({ error: 'Internal Server Error' });
-      return;
+        const result = await Todo.deleteOne({ _id: todoId, userId });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: 'Todo not found' });
+        }
+
+        res.status(200).json({ message: 'Todo deleted successfully' });
+    } catch (err) {
+        console.error('Error deleting todo:', err);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
-    res.json(results);
-  });
 });
 
 
-const PORT = 3001;
+// Update Todo in all todo list dtails page
+app.put('/todos/:userId/:todoId', async (req, res) => {
+  try {
+      const { userId, todoId } = req.params;
+      const { title, description, date, time } = req.body;
+
+      if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(todoId)) {
+          return res.status(400).json({ message: 'Invalid parameters' });
+      }
+
+      const updatedTodo = await Todo.findOneAndUpdate(
+          { _id: todoId, userId: userId },
+          { title, description, date, time },
+          { new: true }
+      );
+
+      if (!updatedTodo) {
+          return res.status(404).json({ message: 'Todo not found' });
+      }
+
+      res.status(200).json({ message: 'Todo updated successfully', todo: updatedTodo });
+  } catch (err) {
+      console.error('Error updating todo:', err);
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+// Delete Todo in all todo list dtails page
+app.delete('/todos/:userId/:todoId', async (req, res) => {
+  try {
+      const { userId, todoId } = req.params;
+
+      if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(todoId)) {
+          return res.status(400).json({ message: 'Invalid parameters' });
+      }
+
+      const result = await Todo.deleteOne({ _id: todoId, userId });
+
+      if (result.deletedCount === 0) {
+          return res.status(404).json({ message: 'Todo not found' });
+      }
+
+      res.status(200).json({ message: 'Todo deleted successfully' });
+  } catch (err) {
+      console.error('Error deleting todo:', err);
+      res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+
+// Fetch User by ID
+app.get('/users/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid userId format' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        res.status(200).send(user);
+    } catch (err) {
+        console.error('Error fetching user:', err);
+        res.status(500).send({ message: 'Error fetching user' });
+    }
+});
+
+// Update User details
+app.put('/users/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { fullName, email, mobileNumber, password } = req.body;
+
+        let updateData = { fullName, email, mobileNumber };
+
+        if (password) {
+            const hashedPassword = bcrypt.hashSync(password, 10);
+            updateData.password = hashedPassword;
+        }
+
+        const result = await User.findByIdAndUpdate(userId, updateData, { new: true });
+
+        if (!result) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        res.status(200).send({ message: 'User details updated successfully' });
+    } catch (err) {
+        console.error('Error updating user details:', err);
+        res.status(500).send({ message: 'Error updating user details', error: err });
+    }
+});
+
+
+
+
+// Error handling middleware for JSON parsing errors
+app.use((err, req, res, next) => {
+    if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+        return res.status(400).json({ message: 'Invalid JSON' });
+    }
+    next();
+});
+
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });

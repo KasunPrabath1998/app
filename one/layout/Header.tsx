@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome'; // Ensure to use correct icon name and library
+import Icon from 'react-native-vector-icons/FontAwesome';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -75,7 +75,7 @@ const Header = () => {
   return (
     <View style={styles.header}>
       <View style={styles.headerLeft}>
-        <Image source={{ uri: 'https://via.placeholder.com/50' }} style={styles.profileImage} />
+        <Image source={require('../assets/kasun.jpeg')} style={styles.profileImage} />
         <View style={styles.greetingContainer}>
           {loading ? (
             <ActivityIndicator size="small" color="#3B82F6" />
@@ -106,12 +106,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     backgroundColor: '#FFF',
-    elevation: 4, // Add shadow for Android
-    shadowColor: '#000', // Add shadow for iOS
+    elevation: 4,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    height: 120, 
+    height: 120,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -127,11 +127,12 @@ const styles = StyleSheet.create({
   },
   greetingText: {
     color: '#3B82F6',
-    fontSize: 14,
+    fontSize: 16,
   },
   userName: {
     fontWeight: 'bold',
     color: '#1D4ED8',
+    fontSize: 15,
   },
   iconsContainer: {
     flexDirection: 'row',

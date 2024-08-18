@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Animated } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Animated, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -10,8 +10,25 @@ const LoginScreen = () => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [showAnimation, setShowAnimation] = useState(false);
+  const [loading, setLoading] = useState(false); // State for loading animation
   const rotateValue = useRef(new Animated.Value(0)).current;
   const scaleValue = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (token) {
+          // User is already logged in, navigate to HomeScreen
+          router.navigate('/Home');
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -20,7 +37,7 @@ const LoginScreen = () => {
         Animated.parallel([
           Animated.timing(rotateValue, {
             toValue: 1,
-            duration: 1000, // Duration of one full rotation
+            duration: 1000,
             useNativeDriver: true,
           }),
           Animated.sequence([
@@ -39,7 +56,7 @@ const LoginScreen = () => {
       ).start();
     }
     return () => {
-      isMounted = false; // Cleanup when component unmounts
+      isMounted = false;
       rotateValue.stopAnimation();
       scaleValue.stopAnimation();
     };
@@ -69,10 +86,12 @@ const LoginScreen = () => {
   const handleLogin = async () => {
     if (!validateInputs()) return;
 
+    setLoading(true);
+
     try {
       const response = await axios.post('http://10.0.2.2:3001/login', {
-        email: email,
-        password: password,
+        email,
+        password,
       });
 
       if (response.status === 200) {
@@ -82,19 +101,20 @@ const LoginScreen = () => {
         await AsyncStorage.setItem('token', token);
         await AsyncStorage.setItem('userId', userId.toString());
 
-        console.log('User ID stored:', userId); // Ensure this line prints the ID
+        console.log('User ID stored:', userId);
 
-        // Trigger animation and navigate
         setShowAnimation(true);
         setTimeout(() => {
-          router.navigate("/Home");
+          setLoading(false);
+          router.navigate('/Home');
         }, 2000);
       } else {
         alert('Login failed. Please check your credentials and try again.');
+        setLoading(false);
       }
     } catch (error) {
-     
       alert('Login failed. Please check your credentials and try again.');
+      setLoading(false);
     }
   };
 
@@ -107,8 +127,8 @@ const LoginScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.navigate("/")} style={styles.backButton}>
-          {/* Add an image or text for back button if needed */}
+        <TouchableOpacity onPress={() => router.navigate('/')} style={styles.backButton}>
+          {/* Optional: Add an image or text for back button */}
         </TouchableOpacity>
         <Text style={styles.login}>LOGIN</Text>
       </View>
@@ -144,10 +164,16 @@ const LoginScreen = () => {
       <Text style={styles.orText}>or sign up with</Text>
       <View style={styles.bottomtext}>
         <Text style={styles.signuptext}>Don't have an account?</Text>
-        <TouchableOpacity onPress={() => router.navigate("/SignUpScreen")} style={styles.signUpButton}>
+        <TouchableOpacity onPress={() => router.navigate('/SignUpScreen')} style={styles.signUpButton}>
           <Text style={styles.signUpButtonText}>Sign Up</Text>
         </TouchableOpacity>
       </View>
+
+      {loading && (
+        <View style={styles.rotatingObject}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      )}
 
       {showAnimation && (
         <Animated.View
@@ -156,7 +182,7 @@ const LoginScreen = () => {
             { transform: [{ rotate }, { scale: scaleValue }] }
           ]}
         >
-          <Image source={require("../assets/load.png")} style={styles.rotateIcon} />
+          <Image source={require('../assets/load.png')} style={styles.rotateIcon} />
         </Animated.View>
       )}
     </View>
@@ -173,7 +199,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center', // Center content horizontally
+    justifyContent: 'center',
     marginBottom: 20,
   },
   backButton: {
@@ -183,8 +209,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#2260FF',
-    textAlign: 'center', // Center text horizontally
-    flex: 1, // Allow the text to use available space
+    textAlign: 'center',
+    flex: 1,
   },
   welcomeText: {
     fontSize: 24,
@@ -227,7 +253,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 20,
     marginTop: 40,
-    alignSelf: 'center', // Center the button horizontally
+    alignSelf: 'center',
     width: 210,
   },
   buttonText: {
@@ -242,7 +268,7 @@ const styles = StyleSheet.create({
   },
   bottomtext: {
     flexDirection: 'row',
-    justifyContent: 'center', // Center bottom text horizontally
+    justifyContent: 'center',
     marginBottom: 20,
   },
   signuptext: {

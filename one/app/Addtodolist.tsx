@@ -47,21 +47,31 @@ const AddTodoScreen = () => {
         return;
       }
 
+      // Format date and time
+      const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD
+      const formattedTime = date.toTimeString().split(' ')[0]; // HH:MM:SS
+
+      console.log('Selected Date:', date.toLocaleDateString());
+      console.log('Date for API:', formattedDate);
+      console.log('Time for API:', formattedTime);
+
       const response = await axios.post(
         'http://10.0.2.2:3001/add-todo',
         {
           title,
           description,
-          date: date.toISOString().split('T')[0], // Format date as YYYY-MM-DD
-          time: date.toTimeString().split(' ')[0], // Format time as HH:MM:SS
-          userId: parseInt(userId, 10),
+          date: formattedDate,
+          time: formattedTime,
+          userId: userId,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
 
-      if (response.status === 200) {
+      console.log('Response:', response.data); // Log response for debugging
+
+      if (response.status === 201) {
         Alert.alert('Success', 'Todo added successfully');
         setTitle('');
         setDescription('');
@@ -71,10 +81,10 @@ const AddTodoScreen = () => {
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        console.error('Error:', error.response ? error.response.data : error.message);
-        Alert.alert('Error', 'An error occurred. Please try again later.');
+        console.error('Axios Error:', error.response ? error.response.data : error.message);
+        Alert.alert('Error', `Error: ${error.response?.data?.message || 'An error occurred. Please try again later.'}`);
       } else {
-       
+        console.error('Unexpected Error:', error);
         Alert.alert('Error', 'An unexpected error occurred. Please try again later.');
       }
     }
@@ -90,7 +100,6 @@ const AddTodoScreen = () => {
   const onTimeChange = (event: any, selectedTime?: Date) => {
     setShowTimePicker(false);
     if (selectedTime) {
-      // Update the time while keeping the same date
       const updatedDate = new Date(date);
       updatedDate.setHours(selectedTime.getHours());
       updatedDate.setMinutes(selectedTime.getMinutes());
@@ -113,7 +122,7 @@ const AddTodoScreen = () => {
           style={styles.input}
           placeholder="Title"
           value={title}
-          onChangeText={(text) => setTitle(text)}
+          onChangeText={setTitle}
         />
 
         <Text style={styles.label}>Description</Text>
@@ -121,7 +130,7 @@ const AddTodoScreen = () => {
           style={styles.input}
           placeholder="Description"
           value={description}
-          onChangeText={(text) => setDescription(text)}
+          onChangeText={setDescription}
           multiline
         />
 
@@ -155,7 +164,7 @@ const AddTodoScreen = () => {
           <Text style={styles.buttonText}>Add Todo</Text>
         </TouchableOpacity>
       </View>
-      <Footer />  
+      <Footer />
     </View>
   );
 };
@@ -168,7 +177,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
-    justifyContent: 'center', 
+    justifyContent: 'center',
   },
   userId: {
     fontSize: 16,
@@ -209,7 +218,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
-
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Calendar } from 'react-native-calendars';
@@ -8,11 +8,11 @@ import Header from '../layout/Header';
 import { useRouter } from 'expo-router';
 
 interface Item {
-  id: number;
+  _id: string;
   title: string;
   description: string;
   due_date: string;
-  userId: number;
+  userId: string;
   created_at: string;
 }
 
@@ -21,6 +21,7 @@ const ProfileScreen = () => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [sriLankanTime, setSriLankanTime] = useState<string>('');
+  const [noTasksMessage, setNoTasksMessage] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -49,26 +50,38 @@ const ProfileScreen = () => {
   useEffect(() => {
     const fetchItems = async () => {
       setLoading(true);
+      setNoTasksMessage(null); 
       try {
         const token = await AsyncStorage.getItem('token');
         const userId = await AsyncStorage.getItem('userId');
 
         if (!token || !userId) {
-          Alert.alert('Error', 'No authentication details found. Please log in.');
+          setNoTasksMessage("User is not authenticated.");
           return;
         }
 
-        const response = await axios.get(`http://10.0.2.2:3001/todos/${userId}/date/${selectedDate}`, {
+        const utcDate = new Date(selectedDate).toISOString().split('T')[0];
+
+        const response = await axios.get(`http://10.0.2.2:3001/todos/${userId}/date/${utcDate}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (response.status === 200) {
-          setItems(response.data);
+          if (response.data.length === 0) {
+            setNoTasksMessage("No tasks found for this user on the specified date.");
+            setItems([]);
+          } else {
+            setItems(response.data);
+          }
         } else {
-          Alert.alert('Error', 'Failed to fetch items.');
+          setNoTasksMessage("Failed to fetch tasks.");
         }
       } catch (error) {
-        Alert.alert('Error', 'An error occurred while fetching items.');
+        if (axios.isAxiosError(error) && error.response?.data.message) {
+          setNoTasksMessage(error.response.data.message);
+        } else {
+          setNoTasksMessage("An error occurred while fetching tasks.");
+        }
       } finally {
         setLoading(false);
       }
@@ -81,13 +94,23 @@ const ProfileScreen = () => {
     setSelectedDate(day.dateString);
   };
 
-  const handleItemPress = (item: Item) => {
-    router.push({
-      pathname: '/TodoDetailScreen', // Updated route name
-      params: { item: JSON.stringify(item) }, // Serialize the item object
-    });
+  const handleItemPress = async (item: Item) => {
+    try {
+      await router.push({
+        pathname: '/ItemdetaisMain',
+        params: {
+          id: item._id,
+          title: item.title,
+          description: item.description,
+          due_date: item.due_date,
+          created_at: item.created_at,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching todo details:', error);
+    }
   };
-  
+
   const renderItem = ({ item }: { item: Item }) => (
     <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.item}>
       <Text style={styles.itemTitle}>{item.title}</Text>
@@ -95,14 +118,14 @@ const ProfileScreen = () => {
     </TouchableOpacity>
   );
 
+  const keyExtractor = (item: Item) => item._id || Math.random().toString();
+
   return (
     <View style={styles.container}>
       <Header />
-
       <View style={styles.timeContainer}>
         <Text style={styles.timeText}>{sriLankanTime}</Text>
       </View>
-
       <View style={styles.calendarContainer}>
         <Calendar
           current={selectedDate}
@@ -113,6 +136,7 @@ const ProfileScreen = () => {
               selected: true,
               selectedColor: '#1D4ED8',
               selectedTextColor: '#ffffff',
+              selectedDotColor: '#ffffff',
             },
           }}
           monthFormat={'yyyy-MM'}
@@ -138,27 +162,27 @@ const ProfileScreen = () => {
           }}
         />
       </View>
-
       <View style={styles.TasktitleContainer}>
-  <Text style={styles.TasktitleText}>Available Tasks</Text>
-</View>
-
-
-
+        <Text style={styles.TasktitleText}>Available Tasks</Text>
+      </View>
       <View style={styles.itemsContainer}>
         {loading ? (
           <ActivityIndicator size="large" color="#1D4ED8" />
         ) : (
-          <FlatList
-            data={items}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderItem}
-            contentContainerStyle={styles.itemsList}
-            ListEmptyComponent={<Text style={styles.noItems}>No tasks for this date.</Text>}
-          />
+          <>
+            {noTasksMessage ? (
+              <Text style={styles.noItems}>{noTasksMessage}</Text>
+            ) : (
+              <FlatList
+                data={items}
+                keyExtractor={keyExtractor}
+                renderItem={renderItem}
+                contentContainerStyle={styles.itemsList}
+              />
+            )}
+          </>
         )}
       </View>
-
       <Footer />
     </View>
   );
@@ -180,13 +204,12 @@ const styles = StyleSheet.create({
   },
   calendarContainer: {
     flex: 4,
-    marginTop: 29,
+    marginTop: 20,
     marginHorizontal: 16,
-    overflow: 'visible',
-    elevation: 0,
     backgroundColor: '#fff',
-    borderWidth: 5,
+    borderWidth: 1,
     borderColor: '#ddd',
+    borderRadius: 10,
   },
   itemsContainer: {
     flex: 1,
@@ -217,13 +240,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   TasktitleContainer: {
-    marginTop:1,
     padding: 16,
   },
   TasktitleText: {
-    fontSize: 15,
+    fontSize: 18,
     fontWeight: 'bold',
-    color:"blue",
+    color: 'blue',
   },
 });
 

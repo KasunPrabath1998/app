@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Footer from '../layout/Footer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -62,13 +62,29 @@ const ProfileScreen = () => {
   }, []);
 
   const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('userId');
-      router.push('/LoginScreen');
-    } catch (error) {
-      console.error('Error during logout:', error);
-    }
+    Alert.alert(
+      'Confirm Logout',
+      'Are you sure you want to log out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'OK',
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('token');
+              await AsyncStorage.removeItem('userId');
+              router.push('/LoginScreen');
+            } catch (error) {
+              console.error('Error during logout:', error);
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const handleChange = (name: string, value: string) => {
@@ -112,7 +128,7 @@ const ProfileScreen = () => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutIcon}>
-          <Icon name="sign-out" size={24} color="#4F4F4F" />
+          <Icon name="sign-out" size={30} color="#4F4F4F" />
         </TouchableOpacity>
       </View>
 
@@ -270,26 +286,25 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#1D4ED8',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   detailItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   detailLabel: {
     fontSize: 16,
-    color: '#333333',
+    fontWeight: 'bold',
+    color: '#4F4F4F',
     flex: 1,
   },
   detailValue: {
-    fontSize: 16,
-    color: '#666666',
     flex: 2,
+    fontSize: 16,
+    color: '#4F4F4F',
     borderBottomWidth: 1,
-    borderBottomColor: '#cccccc',
-    paddingVertical: 8,
+    borderBottomColor: '#CCCCCC',
+    padding: 8,
   },
   logoutIcon: {
     marginTop: 10,
