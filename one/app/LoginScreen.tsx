@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Animated, ActivityIndicator } from 'react-native';
 import axios from 'axios';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = () => {
@@ -13,6 +13,7 @@ const LoginScreen = () => {
   const [loading, setLoading] = useState(false); // State for loading animation
   const rotateValue = useRef(new Animated.Value(0)).current;
   const scaleValue = useRef(new Animated.Value(1)).current;
+  const router = useRouter(); // Use useRouter from expo-router
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -20,7 +21,7 @@ const LoginScreen = () => {
         const token = await AsyncStorage.getItem('token');
         if (token) {
           // User is already logged in, navigate to HomeScreen
-          router.navigate('/Home');
+          router.replace('/Home'); // Use replace to prevent going back to LoginScreen
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
@@ -28,7 +29,7 @@ const LoginScreen = () => {
     };
 
     checkAuthStatus();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     let isMounted = true;
@@ -106,7 +107,7 @@ const LoginScreen = () => {
         setShowAnimation(true);
         setTimeout(() => {
           setLoading(false);
-          router.navigate('/Home');
+          router.replace('/Home'); // Use replace to prevent going back to LoginScreen
         }, 2000);
       } else {
         alert('Login failed. Please check your credentials and try again.');

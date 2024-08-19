@@ -38,7 +38,7 @@ const HomeScreen: React.FC = () => {
           console.log('No user ID found');
         }
       } catch (error) {
-        console.error('Error fetching todos:', error);
+       //massage 
       }
     };
 

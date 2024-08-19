@@ -49,7 +49,7 @@ const SignUpScreen = () => {
 
       if (response.status === 200) {
         Alert.alert('Success', 'Registration successful!');
-        router.navigate("/LoginScreen");
+        router.replace("/LoginScreen"); // Use replace instead of navigate
       } else {
         Alert.alert('Registration failed', 'Please try again.');
       }
@@ -62,7 +62,7 @@ const SignUpScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.navigate("/LoginScreen")} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.replace("/LoginScreen")} style={styles.backButton}>
           <Image source={require("../assets/arrow.png")} style={styles.backIcon} />
         </TouchableOpacity>
         <Text style={styles.signuptitle}>New Account</Text>
@@ -116,7 +116,7 @@ const SignUpScreen = () => {
       <Text style={styles.orText}>or sign up with</Text>
       <View style={styles.bottomtext}>
         <Text>Already have an account?</Text>
-        <TouchableOpacity onPress={() => router.navigate("/LoginScreen")} style={styles.signUpButton}>
+        <TouchableOpacity onPress={() => router.replace("/LoginScreen")} style={styles.signUpButton}>
           <Text style={styles.signUpButtonText}>Log In</Text>
         </TouchableOpacity>
       </View>

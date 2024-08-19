@@ -7,6 +7,7 @@ import Footer from '../layout/Footer';
 import Header from '../layout/Header';
 import { useRouter } from 'expo-router';
 
+// Define the Item type
 interface Item {
   _id: string;
   title: string;
@@ -16,7 +17,7 @@ interface Item {
   created_at: string;
 }
 
-const ProfileScreen = () => {
+const ProfileScreen: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -90,13 +91,13 @@ const ProfileScreen = () => {
     fetchItems();
   }, [selectedDate]);
 
-  const handleDayPress = (day: any) => {
+  const handleDayPress = (day: { dateString: string }) => {
     setSelectedDate(day.dateString);
   };
 
   const handleItemPress = async (item: Item) => {
     try {
-      await router.push({
+      await router.replace({
         pathname: '/ItemdetaisMain',
         params: {
           id: item._id,
@@ -107,7 +108,7 @@ const ProfileScreen = () => {
         },
       });
     } catch (error) {
-      console.error('Error fetching todo details:', error);
+      console.error('Error navigating to item details:', error);
     }
   };
 
