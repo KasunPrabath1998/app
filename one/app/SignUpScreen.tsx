@@ -1,9 +1,9 @@
-import { router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
 import axios from 'axios';
+import { useAuthRequest } from 'expo-auth-session';
+import { useRouter } from 'expo-router';
 
-// Define types for the errors
 interface Errors {
   fullName?: string;
   email?: string;
@@ -12,11 +12,43 @@ interface Errors {
 }
 
 const SignUpScreen = () => {
+  const router = useRouter();
   const [fullName, setFullName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [mobileNumber, setMobileNumber] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [errors, setErrors] = useState<Errors>({});
+
+  // Google Sign-In setup
+  const [request, response, promptAsync] = useAuthRequest({
+    clientId: 'YOUR_GOOGLE_CLIENT_ID', // Replace with your Google Client ID
+    scopes: ['profile', 'email'],
+    redirectUri: 'yourapp://redirect', // Update with your app's redirect URI
+  }, {
+    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/auth',
+    tokenEndpoint: 'https://oauth2.googleapis.com/token',
+    revocationEndpoint: 'https://oauth2.googleapis.com/revoke',
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+
+      axios.post('http://10.0.2.2:3001/google-signin', { id_token })
+        .then((res) => {
+          if (res.status === 200) {
+            Alert.alert('Success', 'Google Sign-In successful!');
+            router.replace("/Home"); // Navigate to HomeScreen after successful sign-in
+          } else {
+            Alert.alert('Sign-In failed', 'Please try again.');
+          }
+        })
+        .catch((error) => {
+          console.error('Error:', error);
+          Alert.alert('Error', 'An error occurred. Please try again later.');
+        });
+    }
+  }, [response]);
 
   const validateInputs = () => {
     const newErrors: Errors = {};
@@ -47,15 +79,19 @@ const SignUpScreen = () => {
         password,
       });
 
-      if (response.status === 200) {
-        Alert.alert('Success', 'Registration successful!');
-        router.replace("/LoginScreen"); // Use replace instead of navigate
+      if (response.status === 201) {
+        Alert.alert('Success', 'Registration successful! Please check your email to verify your account.');
+        router.replace("/LoginScreen"); // Navigate to LoginScreen after successful registration
       } else {
         Alert.alert('Registration failed', 'Please try again.');
       }
     } catch (error) {
-      console.error('Error:', error);
-      Alert.alert('Error', 'An error occurred. Please try again later.');
+  
+      Alert.alert(
+        'Email Already In Use',
+        'The email address is already taken. Please use a different one.'
+      );
+      
     }
   };
 
@@ -68,6 +104,7 @@ const SignUpScreen = () => {
         <Text style={styles.signuptitle}>New Account</Text>
       </View>
 
+      {/* Input fields */}
       <Text style={styles.label}>Full Name</Text>
       <TextInput
         style={[styles.input, errors.fullName ? styles.errorInput : {}]}
@@ -114,6 +151,19 @@ const SignUpScreen = () => {
       </TouchableOpacity>
 
       <Text style={styles.orText}>or sign up with</Text>
+      <TouchableOpacity
+        style={styles.googleButton}
+        onPress={() => {
+          if (request) {
+            promptAsync(); // Trigger Google Sign-In
+          }
+        }}
+        disabled={!request}
+      >
+        <Image source={require('../assets/google.png')} style={styles.googleIcon} />
+        <Text style={styles.googleButtonText}>Sign Up with Google</Text>
+      </TouchableOpacity>
+
       <View style={styles.bottomtext}>
         <Text>Already have an account?</Text>
         <TouchableOpacity onPress={() => router.replace("/LoginScreen")} style={styles.signUpButton}>
@@ -195,6 +245,26 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
     textAlign: 'center',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginTop: 20,
+  },
+  googleIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 10,
+  },
+  googleButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
   },
   bottomtext: {
     flexDirection: 'row',

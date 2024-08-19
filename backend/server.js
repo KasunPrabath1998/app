@@ -1,49 +1,171 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
 const User = require('./models/user');
 const Todo = require('./models/todo');
 
 const app = express();
 app.use(express.json());
 
-
-
-// Replace with your MongoDB connection string
-const mongoUri = 'mongodb://localhost:27017/users';
-
-mongoose.connect(mongoUri)
+// MongoDB Connection
+mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('Database connection failed:', err));
 
+// Nodemailer Configuration
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
 
-// Sign Up
+// Send Verification Email
+const sendVerificationEmail = (user, token) => {
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: user.email,
+    subject: 'Email Verification',
+    text: `Please verify your email by clicking on the following link: \n\n${process.env.FRONTEND_URL}/verify-email?token=${token}`
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error('Error sending email:', error);
+    } else {
+      console.log('Email sent:', info.response);
+    }
+  });
+};
+
+// Signup Endpoint
 app.post('/signup', async (req, res) => {
   try {
     const { fullName, email, mobileNumber, password } = req.body;
     const hashedPassword = bcrypt.hashSync(password, 10);
 
-    // Check if the email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).send({ message: 'Email already in use.' });
+      return res.status(400).json({ message: 'Email already in use.' });
     }
 
-    const newUser = new User({ fullName, email, mobileNumber, password: hashedPassword });
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const newUser = new User({
+      fullName,
+      email,
+      mobileNumber,
+      password: hashedPassword,
+      verificationToken
+    });
     await newUser.save();
 
-    res.status(200).send({ message: 'User registered successfully', user: newUser });
+    sendVerificationEmail(newUser, verificationToken);
+
+    res.status(201).json({ message: 'Registration successful! Please check your email to verify your account.' });
   } catch (err) {
-    if (err.code === 11000) { // Duplicate key error code
-      res.status(400).send({ message: 'Email already in use.' });
-    } else {
-      console.error('Error saving data:', err);
-      res.status(500).send({ message: 'Error saving data' });
-    }
+    console.error('Error during signup:', err);
+    res.status(500).json({ message: 'Error during signup' });
   }
 });
 
+// Verify Email Endpoint
+app.get('/verify-email', async (req, res) => {
+    try {
+      const { token } = req.query;
+  
+      const user = await User.findOne({ verificationToken: token });
+      if (!user) {
+        return res.status(400).send(`
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>TodoApp</title>
+              <style>
+                  body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f8f9fa; }
+                  .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+                  h1 { color: #dc3545; }
+                  p { font-size: 18px; color: #6c757d; }
+                  a { color: #007bff; text-decoration: none; }
+                  a:hover { text-decoration: underline; }
+              </style>
+          </head>
+          <body>
+              <div class="container">
+                  <h1>Your email has already been verified</h1>
+                 <p>The email associated with this account has already been verified. If you're experiencing issues or need further assistance, please try logging in or contact our support team for help.</p>
+                
+              </div>
+          </body>
+          </html>
+        `);
+      }
+  
+      user.verified = true;
+      user.verificationToken = undefined; // Clear the token
+      await user.save();
+  
+      res.status(200).send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>TodoApp</title>
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f8f9fa; }
+                .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+                h1 { color: #28a745; }
+                p { font-size: 18px; color: #6c757d; }
+                a { color: #007bff; text-decoration: none; }
+                a:hover { text-decoration: underline; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Email Verified Successfully!</h1>
+                <p>Your email has been successfully verified. You can now log in to your account.</p>
+              
+            </div>
+        </body>
+        </html>
+      `);
+    } catch (err) {
+      console.error('Error during email verification:', err);
+      res.status(500).send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Server Error</title>
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background-color: #f8f9fa; }
+                .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+                h1 { color: #dc3545; }
+                p { font-size: 18px; color: #6c757d; }
+                a { color: #007bff; text-decoration: none; }
+                a:hover { text-decoration: underline; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Internal Server Error</h1>
+                <p>There was an issue processing your request. Please try again later.</p>
+             
+            </div>
+        </body>
+        </html>
+      `);
+    }
+  });
+  
 
 // Login
 app.post('/login', async (req, res) => {
@@ -67,7 +189,7 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Add Todo
+
 // Add Todo
 app.post('/add-todo', async (req, res) => {
   try {
