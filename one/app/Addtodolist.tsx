@@ -34,7 +34,7 @@ const AddTodoScreen = () => {
 
   const handleAddTodo = async () => {
     if (!title.trim() || !description.trim()) {
-      Alert.alert('Validation Error', 'All fields are required.');
+      Alert.alert('Enter all the details', 'All fields are required.');
       return;
     }
 

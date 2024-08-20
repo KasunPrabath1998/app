@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Alert, Dimensions, ScrollView } from 'react-native';
 import axios from 'axios';
 import { useAuthRequest } from 'expo-auth-session';
 import { useRouter } from 'expo-router';
+
+const { width, height } = Dimensions.get('window'); // Get screen dimensions
 
 interface Errors {
   fullName?: string;
@@ -21,9 +23,9 @@ const SignUpScreen = () => {
 
   // Google Sign-In setup
   const [request, response, promptAsync] = useAuthRequest({
-    clientId: 'YOUR_GOOGLE_CLIENT_ID', // Replace with your Google Client ID
+    clientId: '642181976671-q1gu7a1omr4k0ohavd2s6ftd83f1ssti.apps.googleusercontent.com', // Replace with your Google Client ID
     scopes: ['profile', 'email'],
-    redirectUri: 'yourapp://redirect', // Update with your app's redirect URI
+    redirectUri: 'http://localhost:3001/redirect', 
   }, {
     authorizationEndpoint: 'https://accounts.google.com/o/oauth2/auth',
     tokenEndpoint: 'https://oauth2.googleapis.com/token',
@@ -38,7 +40,7 @@ const SignUpScreen = () => {
         .then((res) => {
           if (res.status === 200) {
             Alert.alert('Success', 'Google Sign-In successful!');
-            router.replace("/Home"); // Navigate to HomeScreen after successful sign-in
+            router.replace("/Home"); 
           } else {
             Alert.alert('Sign-In failed', 'Please try again.');
           }
@@ -81,22 +83,20 @@ const SignUpScreen = () => {
 
       if (response.status === 201) {
         Alert.alert('Success', 'Registration successful! Please check your email to verify your account.');
-        router.replace("/LoginScreen"); // Navigate to LoginScreen after successful registration
+        router.replace("/LoginScreen"); 
       } else {
         Alert.alert('Registration failed', 'Please try again.');
       }
     } catch (error) {
-  
       Alert.alert(
         'Email Already In Use',
         'The email address is already taken. Please use a different one.'
       );
-      
     }
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.replace("/LoginScreen")} style={styles.backButton}>
           <Image source={require("../assets/arrow.png")} style={styles.backIcon} />
@@ -150,12 +150,13 @@ const SignUpScreen = () => {
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
+      <View style={styles.googlecontainer}>
       <Text style={styles.orText}>or sign up with</Text>
       <TouchableOpacity
         style={styles.googleButton}
         onPress={() => {
           if (request) {
-            promptAsync(); // Trigger Google Sign-In
+            promptAsync(); 
           }
         }}
         disabled={!request}
@@ -163,33 +164,33 @@ const SignUpScreen = () => {
         <Image source={require('../assets/google.png')} style={styles.googleIcon} />
         <Text style={styles.googleButtonText}>Sign Up with Google</Text>
       </TouchableOpacity>
-
+      </View>
       <View style={styles.bottomtext}>
         <Text>Already have an account?</Text>
         <TouchableOpacity onPress={() => router.replace("/LoginScreen")} style={styles.signUpButton}>
           <Text style={styles.signUpButtonText}>Log In</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#F5F5F5',
-    padding: 20,
+    padding: width * 0.05, 
     marginTop: 10,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: height * 0.03, 
   },
   backButton: {
     position: 'absolute',
-    left: 20,
+    left: width * 0.03, 
     top: 0,
   },
   backIcon: {
@@ -197,44 +198,44 @@ const styles = StyleSheet.create({
     height: 24,
   },
   signuptitle: {
-    fontSize: 24,
+    fontSize: width * 0.06, 
     fontWeight: 'bold',
     color: '#2260FF',
     textAlign: 'center',
     flex: 1,
   },
   label: {
-    fontSize: 18,
+    fontSize: width * 0.05, 
     color: 'black',
     fontWeight: 'bold',
-    marginTop: 10,
+    marginTop: height * 0.02, 
   },
   input: {
     width: '100%',
-    height: 50,
+    height: height * 0.07, 
     borderWidth: 1,
     borderColor: '#ccc',
     backgroundColor: '#ecf1ff',
     borderRadius: 13,
-    paddingHorizontal: 10,
-    marginBottom: 10,
+    paddingHorizontal: width * 0.04, 
+    marginBottom: height * 0.02, 
   },
   errorInput: {
     borderColor: 'red',
   },
   errorText: {
     color: 'red',
-    fontSize: 14,
-    marginBottom: 10,
+    fontSize: width * 0.04, 
+    marginBottom: height * 0.01, 
   },
   button: {
     backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: height * 0.02, 
+    paddingHorizontal: width * 0.05, 
     borderRadius: 20,
-    marginTop: 40,
+    marginTop: height * 0.05, 
     alignSelf: 'center',
-    width: 210,
+    width: width * 0.6, 
   },
   buttonText: {
     color: '#fff',
@@ -242,25 +243,32 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   orText: {
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: height * 0.02, 
     textAlign: 'center',
   },
+  googlecontainer:{
+    alignItems: 'center',
+    paddingBottom:10,
+  },
+
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
-    padding: 10,
+    paddingHorizontal: width * 0.05, 
+    paddingVertical: height * 0.02,   
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#ccc',
-    marginTop: 20,
+    marginTop: height * 0.02, 
+    width: width * 0.6,        
+    height: height * 0.07,     
   },
   googleIcon: {
     width: 24,
     height: 24,
-    marginRight: 10,
+    marginRight: width * 0.02, 
   },
   googleButtonText: {
     color: '#000',
@@ -269,11 +277,12 @@ const styles = StyleSheet.create({
   bottomtext: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: height * 0.02, 
   },
   signUpButton: {},
   signUpButtonText: {
     color: '#007AFF',
+    marginLeft:5,
   },
 });
 

@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Animated, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image, Animated, ActivityIndicator, Dimensions } from 'react-native';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Get screen dimensions
+const { width, height } = Dimensions.get('window');
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
@@ -194,39 +197,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-    padding: 20,
-    marginTop: 10,
+    padding: width * 0.05, // 5% of screen width
+    marginTop: height * 0.02, // 2% of screen height
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: height * 0.03, // 3% of screen height
   },
   backButton: {
-    marginRight: 20,
+    marginRight: width * 0.05, // 5% of screen width
   },
   login: {
-    fontSize: 24,
+    fontSize: width * 0.06, // 6% of screen width
     fontWeight: 'bold',
     color: '#2260FF',
     textAlign: 'center',
     flex: 1,
   },
   welcomeText: {
-    fontSize: 24,
+    fontSize: width * 0.06, // 6% of screen width
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: height * 0.02, // 2% of screen height
     color: '#2260FF',
-    marginTop: 40,
+    marginTop: height * 0.05, // 5% of screen height
   },
   welcomePara: {
-    fontSize: 14,
-    marginBottom: 30,
+    fontSize: width * 0.04, // 4% of screen width
+    marginBottom: height * 0.03, // 3% of screen height
     color: 'black',
   },
   label: {
-    fontSize: 18,
+    fontSize: width * 0.05, // 5% of screen width
     color: 'black',
     fontWeight: 'bold',
   },
@@ -245,17 +248,17 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: 'red',
-    fontSize: 12,
-    marginBottom: 10,
+    fontSize: width * 0.04, // 4% of screen width
+    marginBottom: height * 0.01, // 1% of screen height
   },
   button: {
     backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: height * 0.02, // 2% of screen height
+    paddingHorizontal: width * 0.1, // 10% of screen width
     borderRadius: 20,
-    marginTop: 40,
+    marginTop: height * 0.05, // 5% of screen height
     alignSelf: 'center',
-    width: 210,
+    width: width * 0.6, // 60% of screen width
   },
   buttonText: {
     color: '#fff',
@@ -263,14 +266,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   orText: {
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: height * 0.02, // 2% of screen height
+    marginBottom: height * 0.02, // 2% of screen height
     textAlign: 'center',
   },
   bottomtext: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: height * 0.03, // 3% of screen height
   },
   signuptext: {
     textAlign: 'center',
@@ -278,6 +281,7 @@ const styles = StyleSheet.create({
   signUpButton: {},
   signUpButtonText: {
     color: '#007AFF',
+    marginLeft:5,
   },
   rotatingObject: {
     position: 'absolute',
@@ -289,8 +293,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rotateIcon: {
-    width: 100,
-    height: 100,
+    width: width * 0.25, // 25% of screen width
+    height: width * 0.25, // 25% of screen width
   },
 });
 
