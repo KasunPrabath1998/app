@@ -7,9 +7,9 @@ const Index = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       router.navigate("./LoginScreen");
-    }, 3000); // 2 seconds
+    }, 3000); // 3 seconds
 
-    // Cleanup the timer if the component unmounts
+    
     return () => clearTimeout(timer);
   }, []);
 
