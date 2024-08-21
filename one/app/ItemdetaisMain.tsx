@@ -244,7 +244,7 @@ const TodoDetailScreen: React.FC = () => {
               <Button title="Edit" onPress={() => setIsEditing(true)} color="#1D4ED8" />
             </View>
             <View style={styles.buttonContainer}>
-              <Button title="Delete" onPress={handleDelete} color="#FF3B30" />
+              <Button title="Complete" onPress={handleDelete} color="#2ac82f" />
             </View>
           </View>
           </>
