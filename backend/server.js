@@ -260,12 +260,12 @@ app.get('/todos/:userId/date/:date', async (req, res) => {
   try {
     const { userId, date } = req.params;
 
-    // Parse the date parameter into a UTC Date object
+    // Parse the date parameter 
     const parsedDate = new Date(date);
     if (isNaN(parsedDate.getTime())) {
       return res.status(400).json({ message: 'Invalid date format' });
     }
-    // Set start and end of the day in UTC
+    // Set start and end of the day 
     const startOfDay = new Date(parsedDate);
     startOfDay.setUTCHours(0, 0, 0, 0);
 
@@ -290,26 +290,8 @@ app.get('/todos/:userId/date/:date', async (req, res) => {
 });
 
 
-app.get('/todos/:userId/:todoId', async (req, res) => {
-    const { userId, todoId } = req.params;
-  
-    try {
-      const todo = await Todo.findOne({ _id: todoId, userId });
-  
-      if (!todo) {
-        return res.status(404).json({ message: 'Todo not found' });
-      }
-  
-      res.json(todo);
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
 
-
-
-// Show a specific TODO item for a user
+// Show a specific TODO item for todolist
 app.get('/todos/:userId/:todoId', async (req, res) => {
   try {
       const { userId, todoId } = req.params;
@@ -463,8 +445,6 @@ app.put('/users/:userId', async (req, res) => {
         res.status(500).send({ message: 'Error updating user details', error: err });
     }
 });
-
-
 
 
 // Error handling middleware for JSON parsing errors

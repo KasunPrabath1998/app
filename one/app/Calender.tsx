@@ -97,20 +97,21 @@ const ProfileScreen: React.FC = () => {
 
   const handleItemPress = async (item: Item) => {
     try {
-      await router.replace({
-        pathname: '/ItemdetaisMain',
-        params: {
-          id: item._id,
-          title: item.title,
-          description: item.description,
-          due_date: item.due_date,
-          created_at: item.created_at,
-        },
-      });
+      // Simplified validation
+      if (!item._id || !item.title || !item.description || !item.due_date || !item.userId) {
+        throw new Error('Item details are incomplete');
+      }
+  
+      const todoId = item._id;
+      const userId = item.userId;
+  
+      await router.push(`/ItemdetaisMain?userId=${userId}&todoId=${todoId}`);
     } catch (error) {
-      console.error('Error navigating to item details:', error);
+      console.error('Error navigating to todo details:', error);
+      alert('Failed to navigate to item details. Please try again.');
     }
   };
+  
 
   const renderItem = ({ item }: { item: Item }) => (
     <TouchableOpacity onPress={() => handleItemPress(item)} style={styles.item}>
